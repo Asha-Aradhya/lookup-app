@@ -14,10 +14,9 @@ function LookupForm() {
         selectedCompetency: '',
         selectedSummaryType: '',
         output: '',
-        formSubmitted: false,
     });
 
-    const { lookupData, selectionMode, selectedParticipant, selectedCompetency, selectedSummaryType, output, formSubmitted } = state;
+    const { lookupData, selectionMode, selectedParticipant, selectedCompetency, selectedSummaryType, output } = state;
 
     // Fetch data from the server for the lookup app and set it to state
     const fetchLookupAppData = async () => {
@@ -47,7 +46,6 @@ function LookupForm() {
             selectedCompetency: '',
             selectedSummaryType: '',
             output: '',
-            formSubmitted: false,
         }));
     };
 
@@ -93,7 +91,6 @@ function LookupForm() {
         const areAllStrings = competencyValues.every(val => typeof val === 'string');
         // Sanitize only if not all strings or not all numbers
         const sanitisedCompetency = (areAllNumbers || areAllStrings) ? competencyValues : sanitisedCompetencyValues(competencyValues);
-        console.log("Data:" + sanitisedCompetency)
 
         let outputText = '';
         switch (selectedSummaryType) {
@@ -108,7 +105,7 @@ function LookupForm() {
                     // If there are both numbers and strings, we need to handle them separately
                     if (sanitisedCompetency.length > 0) {
                         const total = getTotal(sanitisedCompetency);
-                        const lowest = Math.round((Math.min(total / sanitisedCompetency.length) * 10)) / 10;
+                        const lowest = Math.round((total / sanitisedCompetency.length) * 10) / 10;
                         outputText = `The lowest score for ${selectedCompetency} is ${lowest}`;
                     } else {
                         outputText = 'No valid lowest scores found';
@@ -127,7 +124,7 @@ function LookupForm() {
                 } else {
                     if (sanitisedCompetency.length > 0) {
                         const total = getTotal(sanitisedCompetency);
-                        const highest = Math.round((Math.max(total / sanitisedCompetency.length) * 10)) / 10;
+                        const highest = Math.round(((total / sanitisedCompetency.length) * 10)) / 10;
                         outputText = `The highest score for ${selectedCompetency} is ${highest}`;
                     } else {
                         outputText = 'No valid highest score found';
@@ -182,8 +179,6 @@ function LookupForm() {
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
-        console.log('submit')
-        setState((prev) => ({ ...prev, formSubmitted: true }));
         if (selectionMode === modeSelection.PARTICIPANT) {
             generateParticipantOutput();
         } else {
@@ -192,7 +187,7 @@ function LookupForm() {
     }
 
     // Check if the form is valid
-    const isFormValid = selectedCompetency && !formSubmitted && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
+    const isFormValid = selectedCompetency && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
 
     return (
         <section className={styles.lookupContainer}>
@@ -227,7 +222,7 @@ function LookupForm() {
                         options={extractCompetencies(lookupData)}
                         value={selectedCompetency}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setState({ ...state, selectedCompetency: e.target.value, output: '', formSubmitted :false })
+                            setState({ ...state, selectedCompetency: e.target.value, output: ''})
                         }
                         required
                     />
@@ -238,7 +233,7 @@ function LookupForm() {
                             options={getParticipantNames(lookupData)}
                             value={selectedParticipant}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setState({ ...state, selectedParticipant: e.target.value, output: '', formSubmitted :false })
+                                setState({ ...state, selectedParticipant: e.target.value, output: ''})
                             }
                             required
                         />

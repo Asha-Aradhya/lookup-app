@@ -1,13 +1,13 @@
 # lookup-app
 
-To tun the react project, run the below commands
+To run the react project, run the below commands
 
 # npm install
 # npm run dev
 
 This project needs data for which you will have follow the below steps
 
-# navigate to server folder
+# navigate to server folder and run the below command
 # json-server --watch data.json --port 3001
 
 To run tests:
