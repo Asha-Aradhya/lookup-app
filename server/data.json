@@ -1,48 +1,52 @@
 {
-  "participants":[
+  "participants": [
     {
-      "Participant": "Alice",
+      "Participant": "Fiona",
+      "Enthousiasm": "B",
+      "MBOLevel": "C",
+      "Reliability": 4.2,
+      "Communication": 3.8,
+      "Teamwork": "A",
+      "ProblemSolving": 4.5,
+      "Total": 25
+    },
+    {
+      "Participant": "George",
+      "Enthousiasm": 2.9,
+      "MBOLevel": "B",
+      "Reliability": "D",
+      "Initiative": "C",
+      "Adaptability": 3.7,
+      "Total": 19
+    },
+    {
+      "Participant": "Hannah",
       "Enthousiasm": "A",
       "MBOLevel": "A",
-      "Reliability": 3.6,
-      "Communication": 2.56,
-      "Teamwork": "B",
-      "Total": 21
+      "Reliability": 5.0,
+      "Leadership": "B",
+      "Creativity": 4.8,
+      "TechnicalSkills": 3.9,
+      "Total": 28
     },
     {
-      "Participant": "Bob",
-      "Enthousiasm": 4.1,
+      "Participant": "Ian",
+      "Enthousiasm": 3.4,
       "MBOLevel": "D",
-      "Reliability": 3.1,
-      "Initiative": "A",
-      "ProblemSolving": 4.5,
-      "Total": 18
-    },
-    {
-      "Participant": "Charlie",
-      "Enthousiasm": 3.5,
-      "MBOLevel": "C",
-      "Reliability": 1.1,
-      "Leadership": "C",
-      "Adaptability": 5,
+      "Reliability": 2.1,
+      "TimeManagement": "A",
+      "Communication": 3.2,
       "Total": null
     },
     {
-      "Participant": "Diana",
-      "Enthousiasm": 3,
+      "Participant": "Julia",
+      "Enthousiasm": 4.0,
       "MBOLevel": "B",
-      "Reliability": "C",
-      "TimeManagement": "B",
-      "TechnicalSkills": 2.2,
-      "Total": 23
-    },
-    {
-      "Participant": "Ethan",
-      "Enthousiasm": 3.2,
-      "MBOLevel": "A",
-      "Reliability": 9,
-      "Creativity": 6,
-      "Total": 24
+      "Reliability": 3.5,
+      "Creativity": "C",
+      "Teamwork": 2,
+      "Adaptability": 4.1,
+      "Total": 22
     }
   ]
 }

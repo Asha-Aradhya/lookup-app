@@ -5,8 +5,12 @@ import styles from './Lookup.module.scss';
 import { letterToScore, modeSelection, SUMMARY_METHODS, type ParticipantData, type selectionType } from '../../types';
 import { SelectInput } from '../UI/SelectInput/SelectInput';
 import { RadioInput } from '../UI/RadioInput/RadioInput';
+import { fetchLookupAppData } from '../../api/api';
+import Popup from '../UI/Popup/Popup';
 
 function LookupForm() {
+    const [loading, setLoading] = useState(false);
+    const [error, setError] = useState<string | null>(null); 
     const [state, setState] = useState({
         lookupData: [] as ParticipantData[],
         selectionMode: modeSelection.PARTICIPANT,
@@ -24,24 +28,23 @@ function LookupForm() {
         selectedSummaryType: '',
         selectionMode: '',
     });
-    
+
     // Fetch data from the server for the lookup app and set it to state
-    const fetchLookupAppData = async () => {
+    const fetchData = async () => {
+        setLoading(true);
         try {
-            const response = await fetch('http://localhost:3001/participants');
-            //catch any errors other than network errors
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-            const jsonData = await response.json();
-            setState((prev) => ({ ...prev, lookupData: jsonData }));
-        } catch (error: any) {
-            console.error('Fetch error:', error.message);
+            const data = await fetchLookupAppData(setError);
+            console.log(data)
+            setState((prev) => ({ ...prev, lookupData: data }));
+        } catch (error) {
+            console.error('Error fetching data:', error);
+        } finally {
+            setLoading(false);
         }
     };
-
+    
     useEffect(() => {
-        fetchLookupAppData();
+        fetchData();
     }, []);
 
     // Reset the form when user selects a different mode( summary/participant)
@@ -94,7 +97,7 @@ function LookupForm() {
 
     // Generate output for summary mode
     const generateSummaryOutput = () => {
-        const competencyValues = lookupData.map(participant => participant[selectedCompetency]).filter(val => val !== null);
+        const competencyValues = lookupData.map(participant => participant[selectedCompetency]).filter(val => val !== null && val !== undefined);
         const areAllNumbers = competencyValues.every(val => typeof val === 'number');
         const areAllStrings = competencyValues.every(val => typeof val === 'string');
         // Sanitize only if not all strings or not all numbers
@@ -149,7 +152,7 @@ function LookupForm() {
                 } else if (areAllStrings) {
                     const validGrades = competencyValues.filter((val: string) => letterToScore[val.toUpperCase()]);
                     const total = validGrades.reduce((acc, val) => acc + letterToScore[val], 0);
-                    const average = Math.round((total / validGrades.length) * 10) / 10;
+                    const average = Math.round(total / validGrades.length);
                     const averageLetter = Object.keys(letterToScore).find(key => letterToScore[key] === average)
                     outputText = `The average score for ${selectedCompetency} is ${averageLetter}`;
                 } else {
@@ -218,71 +221,76 @@ function LookupForm() {
 
     return (
         <section className={styles.lookupContainer}>
+             {error && <Popup message={error} onClose={() => setError(null)} />}
             <header className={styles.header}>
                 <h3>Look Up App</h3>
             </header>
-
-            <form className={styles.lookupForm} onSubmit={handleSubmit}>
-                <fieldset className={styles.fieldset}>
-                    <legend className={styles.legend}>Select Mode</legend>
-                    <RadioInput
-                        label="Participant"
-                        name="selectmode"
-                        value={modeSelection.PARTICIPANT}
-                        checked={selectionMode === modeSelection.PARTICIPANT}
-                        onChange={() => handleModeChange(modeSelection.PARTICIPANT)}
-                    />
-                    <RadioInput
-                        label="Summary"
-                        name="selectmode"
-                        value={modeSelection.SUMMARY}
-                        checked={selectionMode === modeSelection.SUMMARY}
-                        onChange={() => handleModeChange(modeSelection.SUMMARY)}
-                    />
-                </fieldset>
-
-                <fieldset className={styles.fieldset}>
-                    <legend className={styles.legend}>Select Participant / Summary Method</legend>
-                    <SelectInput
-                        label="Competency"
-                        name="competency"
-                        options={extractCompetencies(lookupData)}
-                        value={selectedCompetency}
-                        onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setState({ ...state, selectedCompetency: e.target.value, output: ''})
-                        }
-                        required
-                    />
-                    {selectionMode === modeSelection.PARTICIPANT ? (
-                        <SelectInput
+            {loading ? (
+                <div className={styles.loading}>
+                    <img src="/loading_icon.gif" alt="Loading..." />
+                </div>
+            ) : (
+                <form className={styles.lookupForm} onSubmit={handleSubmit}>
+                    <fieldset className={styles.fieldset}>
+                        <legend className={styles.legend}>Select Mode</legend>
+                        <RadioInput
                             label="Participant"
-                            name="participantid"
-                            options={getParticipantNames(lookupData)}
-                            value={selectedParticipant}
-                            onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setState({ ...state, selectedParticipant: e.target.value, output: ''})
-                            }
-                            required
+                            name="selectmode"
+                            value={modeSelection.PARTICIPANT}
+                            checked={selectionMode === modeSelection.PARTICIPANT}
+                            onChange={() => handleModeChange(modeSelection.PARTICIPANT)}
                         />
-                    ) : (
+                        <RadioInput
+                            label="Summary"
+                            name="selectmode"
+                            value={modeSelection.SUMMARY}
+                            checked={selectionMode === modeSelection.SUMMARY}
+                            onChange={() => handleModeChange(modeSelection.SUMMARY)}
+                        />
+                    </fieldset>
+
+                    <fieldset className={styles.fieldset}>
+                        <legend className={styles.legend}>Select Participant / Summary Method</legend>
                         <SelectInput
-                            label="Participant's Summary"
-                            name="summarySelect"
-                            options={Object.values(SUMMARY_METHODS)}
-                            value={selectedSummaryType}
+                            label="Competency"
+                            name="competency"
+                            options={extractCompetencies(lookupData)}
+                            value={selectedCompetency}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setState({ ...state, selectedSummaryType: e.target.value, output: '' })
+                                setState({ ...state, selectedCompetency: e.target.value})
                             }
                             required
                         />
-                    )}
-                </fieldset>
+                        {selectionMode === modeSelection.PARTICIPANT ? (
+                            <SelectInput
+                                label="Participant"
+                                name="participantid"
+                                options={getParticipantNames(lookupData)}
+                                value={selectedParticipant}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                    setState({ ...state, selectedParticipant: e.target.value })
+                                }
+                                required
+                            />
+                        ) : (
+                            <SelectInput
+                                label="Participant's Summary"
+                                name="summarySelect"
+                                options={Object.values(SUMMARY_METHODS)}
+                                value={selectedSummaryType}
+                                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                                    setState({ ...state, selectedSummaryType: e.target.value})
+                                }
+                                required
+                            />
+                        )}
+                    </fieldset>
 
-                <button className={styles.button} type="submit" disabled={!isFormValid}>
-                    Submit
-                </button>
-            </form>
-
+                    <button className={styles.button} type="submit" disabled={!isFormValid}>
+                        Submit
+                    </button>
+                </form>
+            )}
             <output className={styles.output}>
                 <p className={output?.toLowerCase().includes('no') ? styles.error : styles.success}>{output}</p>
             </output>
