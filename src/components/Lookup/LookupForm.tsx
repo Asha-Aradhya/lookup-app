@@ -2,11 +2,12 @@
 
 import { useEffect, useRef, useState } from 'react';
 import styles from './Lookup.module.scss';
-import { letterToScore, modeSelection, SUMMARY_METHODS, type ParticipantData, type selectionType } from '../../types';
+import { modeSelection, SUMMARY_METHODS, type ParticipantData, type selectionType } from '../../types';
 import { SelectInput } from '../UI/SelectInput/SelectInput';
 import { RadioInput } from '../UI/RadioInput/RadioInput';
 import { fetchLookupAppData } from '../../api/api';
 import Popup from '../UI/Popup/Popup';
+import { calculateAverage, calculateHighest, calculateLowest, determineType, extractCompetencies, getParticipantNames, getTotal, sanitisedCompetencyValues } from '../Utils/Utils';
 
 function LookupForm() {
     const [loading, setLoading] = useState(false);
@@ -34,7 +35,6 @@ function LookupForm() {
         setLoading(true);
         try {
             const data = await fetchLookupAppData(setError);
-            console.log(data)
             setState((prev) => ({ ...prev, lookupData: data }));
         } catch (error) {
             console.error('Error fetching data:', error);
@@ -59,14 +59,6 @@ function LookupForm() {
         }));
     };
 
-    // Extract competencies from the data
-    const extractCompetencies = (competencies: ParticipantData[]) =>
-        [...new Set(competencies.flatMap((participant) => Object.keys(participant).filter((key) => key !== 'Participant')))];
-
-    // Get the names of the participants
-    const getParticipantNames = (participants: ParticipantData[]) =>
-        participants.map(participant => participant.Participant);
-
     // Generate output for participant mode 
     const generateParticipantOutput = () => {
         const person = lookupData.find((participant) => participant.Participant === selectedParticipant);
@@ -79,22 +71,6 @@ function LookupForm() {
         }));
     }
 
-    // If the competency is both string and number then convert them to numbers
-    const sanitisedCompetencyValues = (competencyValues: (string | number | null)[]) =>
-        competencyValues
-            .map((competency) => {
-                if (typeof competency === 'number') return competency;
-                if (typeof competency === 'string' && letterToScore[competency.toUpperCase()]) {
-                    return letterToScore[competency.toUpperCase()];
-                }
-                return null;
-            })
-            .filter((val): val is number => typeof val === 'number');
-
-    const getTotal = (values: (string[] | number[])): number =>
-        values.filter((val): val is number => typeof val === 'number')
-            .reduce((acc, val) => acc + val, 0);
-
     // Generate output for summary mode
     const generateSummaryOutput = () => {
         const competencyValues = lookupData.map(participant => participant[selectedCompetency]).filter(val => val !== null && val !== undefined);
@@ -106,79 +82,23 @@ function LookupForm() {
         let outputText = '';
         switch (selectedSummaryType) {
             case SUMMARY_METHODS.lowest:
-                if (areAllNumbers) {
-                    const lowestValue = Math.round(Math.min(...competencyValues) * 10) / 10;
-                    outputText = `The lowest score for ${selectedCompetency} is ${lowestValue}`;
-                } else if (areAllStrings) {
-                    const lowestValue = competencyValues.sort().pop();
-                    outputText = `The lowest score for ${selectedCompetency} is ${lowestValue}`;
-                } else {
-                    // If there are both numbers and strings, we need to handle them separately
-                    if (sanitisedCompetency.length > 0) {
-                        const total = getTotal(sanitisedCompetency);
-                        const lowest = Math.round((total / sanitisedCompetency.length) * 10) / 10;
-                        outputText = `The lowest score for ${selectedCompetency} is ${lowest}`;
-                    } else {
-                        outputText = 'No valid lowest scores found';
-                    }
-                }
-
+                outputText = calculateLowest(competencyValues, sanitisedCompetency, selectedCompetency);
                 break;
 
             case SUMMARY_METHODS.highest:
-                if (areAllNumbers) {
-                    const highestValue = Math.round(Math.max(...competencyValues) * 10) / 10;
-                    outputText = `The highest score for ${selectedCompetency} is ${highestValue}`;
-                } else if (areAllStrings) {
-                    const highestValue = competencyValues.sort()[0];
-                    outputText = `The highest score for ${selectedCompetency} is ${highestValue}`;
-                } else {
-                    if (sanitisedCompetency.length > 0) {
-                        const total = getTotal(sanitisedCompetency);
-                        const highest = Math.round(((total / sanitisedCompetency.length) * 10)) / 10;
-                        outputText = `The highest score for ${selectedCompetency} is ${highest}`;
-                    } else {
-                        outputText = 'No valid highest score found';
-                    }
-                }
-
+                outputText = calculateHighest(competencyValues, sanitisedCompetency, selectedCompetency);
                 break;
 
             case SUMMARY_METHODS.average:
-                if (areAllNumbers) {
-                    const total = competencyValues.reduce((accumulator, val) => accumulator + val, 0);
-                    const average = Math.round((total / sanitisedCompetency.length) * 10) / 10;
-                    outputText = `The average score for ${selectedCompetency} is ${average}`;
-                } else if (areAllStrings) {
-                    const validGrades = competencyValues.filter((val: string) => letterToScore[val.toUpperCase()]);
-                    const total = validGrades.reduce((acc, val) => acc + letterToScore[val], 0);
-                    const average = Math.round(total / validGrades.length);
-                    const averageLetter = Object.keys(letterToScore).find(key => letterToScore[key] === average)
-                    outputText = `The average score for ${selectedCompetency} is ${averageLetter}`;
-                } else {
-                    if (sanitisedCompetency.length > 0) {
-                        const total = getTotal(sanitisedCompetency);
-                        const average = Math.round((total / sanitisedCompetency.length) * 10) / 10;
-                        outputText = `The average score for ${selectedCompetency} is ${average}`;
-                    } else {
-                        outputText = 'No valid average scores found';
-                    }
-                }
-
+                outputText = calculateAverage(competencyValues, sanitisedCompetency, selectedCompetency);
                 break;
 
             case SUMMARY_METHODS.type:
-                if (areAllNumbers) {
-                    outputText = `The type of ${selectedCompetency} is 'score'`;
-                } else if (areAllStrings) {
-                    outputText = `The type of ${selectedCompetency} is 'level'`;
-                } else {
-                    outputText = `The type of ${selectedCompetency} is both 'level' and 'score'`;
-                }
-
+                outputText = determineType(competencyValues, selectedCompetency);
                 break;
-
             default:
+                outputText = 'Invalid data';
+                break;
         }
         // Set state with the valid output text
         setState((prev) => ({
