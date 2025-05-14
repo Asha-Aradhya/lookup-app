@@ -1,71 +1,120 @@
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import '@testing-library/jest-dom';
 import LookupForm from './LookupForm';
-import { modeSelection, SUMMARY_METHODS } from '../../types';
+import * as api from '../../api/api';
 
-beforeAll(() => {
-    global.fetch = jest.fn().mockResolvedValue({
-        ok: true,
-        json: async () => [
-            { Participant: 'Alice', Competency1: 'A', Competency2: 85 },
-            { Participant: 'Bob', Competency1: 'B', Competency2: 90 },
-        ],
-    });
-});
+jest.mock('../../api/api'); // Mock the API
 
-afterAll(() => {
-    jest.resetAllMocks();
-});
+const mockData = [
+    { Participant: 'Alice', Communication: 4, Leadership: 3 },
+    { Participant: 'Bob', Communication: 5, Leadership: 2 },
+    { Participant: 'Jon', total: null, Leadership: 2 },
+    { Participant: 'Anthony', total: 1.1, enthousiasm: 2 },
+    { Participant: 'Donald Duck', enthousiasm: 0 },
+];
 
 describe('LookupForm Component', () => {
     beforeEach(() => {
         jest.clearAllMocks();
     });
 
-    test('renders the component with initial state', async () => {
+    test('renders loading initially and then form after data loads', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
-        expect(screen.getByText('Look Up App')).toBeInTheDocument();
-        await waitFor(() => expect(global.fetch).toHaveBeenCalledTimes(1));
-    });
 
-    test('fetches and displays participant data', async () => {
-        render(<LookupForm />);
+        expect(screen.getByAltText(/loading/i)).toBeInTheDocument();
+
         await waitFor(() => {
-            expect(screen.getByText('Alice')).toBeInTheDocument();
-            expect(screen.getByText('Bob')).toBeInTheDocument();
+            expect(screen.getByText(/Look Up App/i)).toBeInTheDocument();
         });
     });
 
-    test('disables submit button when form is invalid', async () => {
-        render(<LookupForm />);
-        await waitFor(() => screen.getByLabelText(/Competency/i));
-        const submitButton = screen.getByRole('button', { name: /Submit/i });
-        expect(submitButton).toBeDisabled();
-        fireEvent.change(screen.getByLabelText(/Competency/i), { target: { value: 'Competency1' } });
-        expect(submitButton).toBeDisabled();
-    });
+    test('displays error popup on API error', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockImplementationOnce((setError) => {
+            setError('Failed to fetch');
+            return Promise.resolve([]);
+        });
 
-    test('generates output for summary mode (lowest)', async () => {
         render(<LookupForm />);
-        await waitFor(() => screen.getByLabelText(/Competency/i));
-        fireEvent.click(screen.getByLabelText(/Summary/i));
-        fireEvent.change(screen.getByLabelText(/Competency/i), { target: { value: 'Competency2' } });
-        fireEvent.change(screen.getByLabelText(/Participant's Summary/i), { target: { value: SUMMARY_METHODS.lowest } });
-        fireEvent.click(screen.getByRole('button', { name: /Submit/i }));
         await waitFor(() => {
-            expect(screen.getByText(/The lowest score for Competency2 is 85/i)).toBeInTheDocument();
+            expect(screen.getByText(/Failed to fetch/i)).toBeInTheDocument();
         });
     });
 
-    test('generates output for summary mode (highest)', async () => {
+    test('changes mode when radio button is clicked', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
-        await waitFor(() => screen.getByLabelText(/Competency/i));
-        fireEvent.click(screen.getByLabelText(/Summary/i));
-        fireEvent.change(screen.getByLabelText(/Competency/i), { target: { value: 'Competency2' } });
-        fireEvent.change(screen.getByLabelText(/Participant's Summary/i), { target: { value: SUMMARY_METHODS.highest } });
-        fireEvent.click(screen.getByRole('button', { name: /Submit/i }));
+        await waitFor(() => screen.getByText('Look Up App'));
+
+        const summaryRadio = screen.getByLabelText(/Summary/i);
+        fireEvent.click(summaryRadio);
+        expect(summaryRadio).toBeChecked();
+    });
+
+    test('disables submit button if form is incomplete', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
+        render(<LookupForm />);
+        await waitFor(() => screen.getByText('Look Up App'));
+
+        const submitButton = screen.getByRole('button', { name: /submit/i });
+        expect(submitButton).toBeDisabled();
+    });
+
+    test('generates output when valid data is selected in Participant mode', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
+        render(<LookupForm />);
+
+        await waitFor(() => screen.getByText('Look Up App'));
+
+        // Select a competency
+        fireEvent.change(screen.getByLabelText(/Competency/i), {
+            target: { value: 'Communication' },
+        });
+
+        // Use a more specific selector for the participant dropdown
+        const participantSelects = screen.getAllByLabelText(/Participant/i);
+        const participantDropdown = participantSelects.find((el) => el.tagName === 'SELECT') as HTMLSelectElement;
+
+        fireEvent.change(participantDropdown, {
+            target: { value: 'Alice' },
+        });
+
+        // Submit the form
+        const submitButton = screen.getByRole('button', { name: /submit/i });
+        expect(submitButton).not.toBeDisabled();
+        fireEvent.click(submitButton);
+
+        // Wait for the output to appear
         await waitFor(() => {
-            expect(screen.getByText(/The highest score for Competency2 is 90/i)).toBeInTheDocument();
+            expect(screen.getByText(/Alice scored 4 on Communication/i)).toBeInTheDocument();
+        });
+    });
+    test('shows message when selected participant has no score for selected competency', async () => {
+        (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
+        render(<LookupForm />);
+
+        await waitFor(() => screen.getByText('Look Up App'));
+
+        // Select a competency
+        fireEvent.change(screen.getByLabelText(/Competency/i), {
+            target: { value: 'total' },
+        });
+
+        // Use a more specific selector for the participant dropdown
+        const participantSelects = screen.getAllByLabelText(/Participant/i);
+        const participantDropdown = participantSelects.find((el) => el.tagName === 'SELECT') as HTMLSelectElement;
+
+        fireEvent.change(participantDropdown, {
+            target: { value: 'Jon' },
+        });
+
+        // Submit the form
+        const submitButton = screen.getByRole('button', { name: /submit/i });
+        expect(submitButton).not.toBeDisabled();
+        fireEvent.click(submitButton);
+
+        // Wait for the output to appear
+        await waitFor(() => {
+            expect(screen.getByText(/Jon has no score for total/i)).toBeInTheDocument();
         });
     });
 });
