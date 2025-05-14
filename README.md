@@ -7,11 +7,11 @@ To run the react project, run the below commands
 
 This project needs data for which you will have follow the below steps
 
-# navigate to server folder and run the below command
-# json-server --watch data.json --port 3001
+Navigate to server folder: 
+# npx json-server --watch data.json --port 3001
 
 To run tests:
-#npm run test
+# npm run test
 
 # React + TypeScript + Vite
 
