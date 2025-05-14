@@ -1,5 +1,5 @@
 
-import LookupForm from './Lookup/LookupForm';
+import LookupForm from './components/Lookup/LookupForm';
 
 function App() {
   return (

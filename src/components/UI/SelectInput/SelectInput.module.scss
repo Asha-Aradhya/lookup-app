@@ -1,0 +1,21 @@
+$text-color: #333;
+$error-color: #FF0000;
+
+.inputSection {
+    margin: 1rem 0;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.label {
+    color: $text-color;
+}
+
+.required {
+    color: $error-color;
+}
+
+.selectInput {
+    min-width: 10rem;
+}
