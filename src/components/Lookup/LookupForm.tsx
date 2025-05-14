@@ -14,9 +14,10 @@ function LookupForm() {
         selectedCompetency: '',
         selectedSummaryType: '',
         output: '',
+        formSubmitted: false,
     });
 
-    const { lookupData, selectionMode, selectedParticipant, selectedCompetency, selectedSummaryType, output } = state;
+    const { lookupData, selectionMode, selectedParticipant, selectedCompetency, selectedSummaryType, output, formSubmitted } = state;
 
     // Fetch data from the server for the lookup app and set it to state
     const fetchLookupAppData = async () => {
@@ -46,6 +47,7 @@ function LookupForm() {
             selectedCompetency: '',
             selectedSummaryType: '',
             output: '',
+            formSubmitted: false,
         }));
     };
 
@@ -181,6 +183,7 @@ function LookupForm() {
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
         console.log('submit')
+        setState((prev) => ({ ...prev, formSubmitted: true }));
         if (selectionMode === modeSelection.PARTICIPANT) {
             generateParticipantOutput();
         } else {
@@ -189,7 +192,7 @@ function LookupForm() {
     }
 
     // Check if the form is valid
-    const isFormValid = selectedCompetency && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
+    const isFormValid = selectedCompetency && !formSubmitted && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
 
     return (
         <section className={styles.lookupContainer}>
@@ -224,7 +227,7 @@ function LookupForm() {
                         options={extractCompetencies(lookupData)}
                         value={selectedCompetency}
                         onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                            setState({ ...state, selectedCompetency: e.target.value, output: '' })
+                            setState({ ...state, selectedCompetency: e.target.value, output: '', formSubmitted :false })
                         }
                         required
                     />
@@ -235,7 +238,7 @@ function LookupForm() {
                             options={getParticipantNames(lookupData)}
                             value={selectedParticipant}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setState({ ...state, selectedParticipant: e.target.value, output: '' })
+                                setState({ ...state, selectedParticipant: e.target.value, output: '', formSubmitted :false })
                             }
                             required
                         />

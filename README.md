@@ -10,6 +10,9 @@ This project needs data for which you will have follow the below steps
 # navigate to server folder
 # json-server --watch data.json --port 3001
 
+To run tests:
+#npm run test
+
 # React + TypeScript + Vite
 
 This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
