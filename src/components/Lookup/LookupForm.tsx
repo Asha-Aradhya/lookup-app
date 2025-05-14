@@ -1,6 +1,6 @@
 /* Copyright (c) 2025. All Rights Reserved. All information in this file is Confidential and Proprietary. */
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import styles from './Lookup.module.scss';
 import { letterToScore, modeSelection, SUMMARY_METHODS, type ParticipantData, type selectionType } from '../../types';
 import { SelectInput } from '../UI/SelectInput/SelectInput';
@@ -18,6 +18,13 @@ function LookupForm() {
 
     const { lookupData, selectionMode, selectedParticipant, selectedCompetency, selectedSummaryType, output } = state;
 
+    const lastSubmittedValues = useRef({
+        selectedParticipant: '',
+        selectedCompetency: '',
+        selectedSummaryType: '',
+        selectionMode: '',
+    });
+    
     // Fetch data from the server for the lookup app and set it to state
     const fetchLookupAppData = async () => {
         try {
@@ -69,6 +76,7 @@ function LookupForm() {
         }));
     }
 
+    // If the competency is both string and number then convert them to numbers
     const sanitisedCompetencyValues = (competencyValues: (string | number | null)[]) =>
         competencyValues
             .map((competency) => {
@@ -179,6 +187,25 @@ function LookupForm() {
     // Handle form submission
     const handleSubmit = (e: React.FormEvent) => {
         e.preventDefault();
+        // Prevent duplicate submissions
+        if (
+            lastSubmittedValues.current.selectedParticipant === selectedParticipant &&
+            lastSubmittedValues.current.selectedCompetency === selectedCompetency &&
+            lastSubmittedValues.current.selectedSummaryType === selectedSummaryType &&
+            lastSubmittedValues.current.selectionMode === selectionMode
+        ) {
+            //Duplicate submission prevented
+            return;
+        }
+
+        // Update last submitted values
+        lastSubmittedValues.current = {
+            selectedParticipant,
+            selectedCompetency,
+            selectedSummaryType,
+            selectionMode,
+        };
+
         if (selectionMode === modeSelection.PARTICIPANT) {
             generateParticipantOutput();
         } else {
