@@ -7,7 +7,7 @@ import { SelectInput } from '../UI/SelectInput/SelectInput';
 import { RadioInput } from '../UI/RadioInput/RadioInput';
 import { fetchLookupAppData } from '../../api/api';
 import Popup from '../UI/Popup/Popup';
-import { calculateAverage, calculateHighest, calculateLowest, determineType, extractCompetencies, getParticipantNames, getTotal, sanitisedCompetencyValues } from '../Utils/Utils';
+import { calculateAverage, calculateHighest, calculateLowest, determineType, extractCompetencies, getParticipantNames, sanitisedCompetencyValues } from '../Utils/Utils';
 
 function LookupForm() {
     const [loading, setLoading] = useState(false);
@@ -59,24 +59,24 @@ function LookupForm() {
         }));
     };
 
-    // Generate output for participant mode 
-    const generateParticipantOutput = () => {
-        const person = lookupData.find((participant) => participant.Participant === selectedParticipant);
-        const competency = person?.[selectedCompetency];
+    // Get the score of the selected participant for the selected competency
+    const getParticipantScoreByCompetency = () => {
+        const participant = lookupData.find((participant) => participant.Participant === selectedParticipant);
+        const competency = participant?.[selectedCompetency];
         setState((prev) => ({
             ...prev,
             output: competency
-                ? `${person?.Participant} scored ${competency} on ${selectedCompetency}`
-                : `${person?.Participant} has no score for ${selectedCompetency}`,
+                ? `${participant?.Participant} scored ${competency} on ${selectedCompetency}`
+                : `${participant?.Participant} has no score for ${selectedCompetency}`,
         }));
     }
 
-    // Generate output for summary mode
-    const generateSummaryOutput = () => {
+    // Calculates summary (high/low/avg/type) for the selected competency across participants.
+    const getCompetencySummary = () => {
         const competencyValues = lookupData.map(participant => participant[selectedCompetency]).filter(val => val !== null && val !== undefined);
         const areAllNumbers = competencyValues.every(val => typeof val === 'number');
         const areAllStrings = competencyValues.every(val => typeof val === 'string');
-        // Sanitize only if not all strings or not all numbers
+        // Sanitize only if not all strings or not all numbers. Convert level into scores for further caluculations
         const sanitisedCompetency = (areAllNumbers || areAllStrings) ? competencyValues : sanitisedCompetencyValues(competencyValues);
         console.log('Sanitised Competency:', sanitisedCompetency);
         let outputText = '';
@@ -117,7 +117,7 @@ function LookupForm() {
             lastSubmittedValues.current.selectedSummaryType === selectedSummaryType &&
             lastSubmittedValues.current.selectionMode === selectionMode
         ) {
-            //Duplicate submission prevented
+            setError("Submitted values are the same. Please select different values.");
             return;
         }
 
@@ -130,15 +130,16 @@ function LookupForm() {
         };
 
         if (selectionMode === modeSelection.PARTICIPANT) {
-            generateParticipantOutput();
+            getParticipantScoreByCompetency();
         } else {
-            generateSummaryOutput();
+            getCompetencySummary();
         }
     }
 
-    // Check if the form is valid
+    // Memoize the competency and participant options to avoid unnecessary re-renders
     const competencyOptions = useMemo(() => extractCompetencies(lookupData), [lookupData]);
     const participantOptions = useMemo(() => getParticipantNames(lookupData), [lookupData]);
+    // Check if the form is valid
     const isFormValid = selectedCompetency && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
 
     return (
