@@ -1,15 +1,16 @@
 $text-color: #333;
 $error-color: #FF0000;
+$black-color: #000000;
 
 .inputSection {
     margin: 1rem 0;
     display: flex;
     align-items: center;
     gap: 1rem;
-}
-
-.label {
-    color: $text-color;
+    label{
+        font-weight:600;
+        color: $text-color;
+    }
 }
 
 .required {
@@ -17,5 +18,8 @@ $error-color: #FF0000;
 }
 
 .selectInput {
-    min-width: 10rem;
+    min-width: 11rem;
+    height: 1.8rem;
+    border: 1px solid $black-color;
+    border-radius: 4px;
 }

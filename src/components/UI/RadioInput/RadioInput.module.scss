@@ -6,6 +6,10 @@ $error-color: #FF0000;
     display: flex;
     align-items: center;
     gap: 1rem;
+    label{
+        font-weight:600;
+        color: $text-color;
+    }
 }
 
 .required {

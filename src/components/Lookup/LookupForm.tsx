@@ -208,10 +208,10 @@ function LookupForm() {
                             />
                         )}
                     </fieldset>
-
-                    <button className={styles.button} type="submit" disabled={!isFormValid}>
-                        Submit
-                    </button>
+                    <div className={styles.submitButton}>
+                        <button className={styles.button} type="submit" disabled={!isFormValid}>
+                            Submit
+                        </button></div>
                 </form>
             )}
             <output className={styles.output}>
