@@ -17,7 +17,7 @@ describe('LookupForm Component', () => {
         jest.clearAllMocks();
     });
 
-    test('renders loading initially and then form after data loads', async () => {
+    test('Renders loading initially and then loads the form', async () => {
         (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
 
@@ -28,7 +28,7 @@ describe('LookupForm Component', () => {
         });
     });
 
-    test('displays error popup on API error', async () => {
+    test('Displays error popup on API error', async () => {
         (api.fetchLookupAppData as jest.Mock).mockImplementationOnce((setError) => {
             setError('Failed to fetch');
             return Promise.resolve([]);
@@ -40,7 +40,7 @@ describe('LookupForm Component', () => {
         });
     });
 
-    test('changes mode when radio button is clicked', async () => {
+    test('Changes mode when radio button is clicked', async () => {
         (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
         await waitFor(() => screen.getByText('Look Up App'));
@@ -50,7 +50,7 @@ describe('LookupForm Component', () => {
         expect(summaryRadio).toBeChecked();
     });
 
-    test('disables submit button if form is incomplete', async () => {
+    test('Disables submit button if form is incomplete', async () => {
         (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
         await waitFor(() => screen.getByText('Look Up App'));
@@ -59,7 +59,7 @@ describe('LookupForm Component', () => {
         expect(submitButton).toBeDisabled();
     });
 
-    test('generates output when valid data is selected in Participant mode', async () => {
+    test('Generates output when valid data is selected in Participant mode', async () => {
         (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
 
@@ -88,7 +88,7 @@ describe('LookupForm Component', () => {
             expect(screen.getByText(/Alice scored 4 on Communication/i)).toBeInTheDocument();
         });
     });
-    test('shows message when selected participant has no score for selected competency', async () => {
+    test('Shows message when selected participant has no score for selected competency', async () => {
         (api.fetchLookupAppData as jest.Mock).mockResolvedValueOnce(mockData);
         render(<LookupForm />);
 
