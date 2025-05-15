@@ -33,19 +33,18 @@ const getValueType = (values: any[]) => {
     return 'mixed';
 };
 
-export const calculateLowest = (competencyValues: any[], sanitisedCompetency: any, selectedCompetency: string): string => {
-    const type = getValueType(competencyValues);
+export const calculateLowest = (sanitisedCompetency: any[], selectedCompetency: string, areAllNumbers: boolean, areAllStrings: boolean): string => {
 
     const formatResult = (value: string | number) =>
         `The lowest score for ${selectedCompetency} is ${value}`;
 
-    if (type === 'number') {
-        const lowestValue = Math.round(Math.min(...competencyValues) * 10) / 10;
+    if (areAllNumbers) {
+        const lowestValue = Math.round(Math.min(...sanitisedCompetency) * 10) / 10;
         return formatResult(lowestValue);
     }
 
-    if (type === 'string') {
-        const lowestValue = competencyValues.sort().pop();
+    if (areAllStrings) {
+        const lowestValue = sanitisedCompetency.sort().pop();
         return formatResult(lowestValue);
     }
 
@@ -58,42 +57,37 @@ export const calculateLowest = (competencyValues: any[], sanitisedCompetency: an
 };
 
 export const calculateHighest = (
-    competencyValues: any[],
-    sanitisedCompetency: any,
-    selectedCompetency: string
-  ): string => {
-    const type = getValueType(competencyValues);
-  
+    sanitisedCompetency: any[], selectedCompetency: string, areAllNumbers: boolean, areAllStrings: boolean
+): string => {
     const formatResult = (value: string | number) =>
-      `The highest score for ${selectedCompetency} is ${value}`;
-  
-    if (type === 'number') {
-      const highestValue = Math.round(Math.max(...competencyValues) * 10) / 10;
-      return formatResult(highestValue);
-    }
-  
-    if (type === 'string') {
-      const highestValue = competencyValues.sort()[0];
-      return formatResult(highestValue);
-    }
-  
-    if (sanitisedCompetency.length > 0) {
-      const highest = Math.max(...sanitisedCompetency);
-      return formatResult(highest);
-    }
-  
-    return 'No valid highest score found';
-  };
-  
+        `The highest score for ${selectedCompetency} is ${value}`;
 
-export const calculateAverage = (competencyValues: any[], sanitisedCompetency: any, selectedCompetency: string): string => {
-    const type = getValueType(competencyValues);
-    if (type === 'number') {
-        const total = competencyValues.reduce((accumulator, val) => accumulator + val, 0);
+    if (areAllNumbers) {
+        const highestValue = Math.round(Math.max(...sanitisedCompetency) * 10) / 10;
+        return formatResult(highestValue);
+    }
+
+    if (areAllStrings) {
+        const highestValue = sanitisedCompetency.sort()[0];
+        return formatResult(highestValue);
+    }
+
+    if (sanitisedCompetency.length > 0) {
+        const highest = Math.max(...sanitisedCompetency);
+        return formatResult(highest);
+    }
+
+    return 'No valid highest score found';
+};
+
+
+export const calculateAverage = (sanitisedCompetency: any[], selectedCompetency: string, areAllNumbers: boolean, areAllStrings: boolean): string => {
+    if (areAllNumbers) {
+        const total = sanitisedCompetency.reduce((accumulator, val) => accumulator + val, 0);
         const average = Math.round((total / sanitisedCompetency.length) * 10) / 10;
         return `The average score for ${selectedCompetency} is ${average}`;
-    } else if (type === 'string') {
-        const validGrades = competencyValues.filter((val: string) => letterToScore[val.toUpperCase()]);
+    } else if (areAllStrings) {
+        const validGrades = sanitisedCompetency.filter((val: string) => letterToScore[val.toUpperCase()]);
         const total = validGrades.reduce((acc, val) => acc + letterToScore[val], 0);
         const average = Math.round(total / validGrades.length);
         const averageLetter = Object.keys(letterToScore).find(key => letterToScore[key] === average)
@@ -109,9 +103,8 @@ export const calculateAverage = (competencyValues: any[], sanitisedCompetency: a
     }
 };
 
-export const determineType = (competencyValues: any[], selectedCompetency: string): string => {
-    const type = getValueType(competencyValues);
-    if (type === 'number') return `The type of ${selectedCompetency} is 'score'`;
-    if (type === 'string') return `The type of ${selectedCompetency} is 'level'`;
+export const determineType = (selectedCompetency: string, areAllNumbers: boolean, areAllStrings: boolean): string => {
+    if (areAllNumbers) return `The type of ${selectedCompetency} is 'score'`;
+    if (areAllStrings) return `The type of ${selectedCompetency} is 'level'`;
     return `The type of ${selectedCompetency} is both 'level' and 'score'`;
 };

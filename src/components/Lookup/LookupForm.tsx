@@ -1,6 +1,6 @@
 /* Copyright (c) 2025. All Rights Reserved. All information in this file is Confidential and Proprietary. */
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import styles from './Lookup.module.scss';
 import { modeSelection, SUMMARY_METHODS, type ParticipantData, type selectionType } from '../../types';
 import { SelectInput } from '../UI/SelectInput/SelectInput';
@@ -11,7 +11,7 @@ import { calculateAverage, calculateHighest, calculateLowest, determineType, ext
 
 function LookupForm() {
     const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null); 
+    const [error, setError] = useState<string | null>(null);
     const [state, setState] = useState({
         lookupData: [] as ParticipantData[],
         selectionMode: modeSelection.PARTICIPANT,
@@ -42,7 +42,7 @@ function LookupForm() {
             setLoading(false);
         }
     };
-    
+
     useEffect(() => {
         fetchData();
     }, []);
@@ -78,23 +78,23 @@ function LookupForm() {
         const areAllStrings = competencyValues.every(val => typeof val === 'string');
         // Sanitize only if not all strings or not all numbers
         const sanitisedCompetency = (areAllNumbers || areAllStrings) ? competencyValues : sanitisedCompetencyValues(competencyValues);
-
+        console.log('Sanitised Competency:', sanitisedCompetency);
         let outputText = '';
         switch (selectedSummaryType) {
             case SUMMARY_METHODS.lowest:
-                outputText = calculateLowest(competencyValues, sanitisedCompetency, selectedCompetency);
+                outputText = calculateLowest(sanitisedCompetency, selectedCompetency, areAllNumbers, areAllStrings);
                 break;
 
             case SUMMARY_METHODS.highest:
-                outputText = calculateHighest(competencyValues, sanitisedCompetency, selectedCompetency);
+                outputText = calculateHighest(sanitisedCompetency, selectedCompetency, areAllNumbers, areAllStrings);
                 break;
 
             case SUMMARY_METHODS.average:
-                outputText = calculateAverage(competencyValues, sanitisedCompetency, selectedCompetency);
+                outputText = calculateAverage(sanitisedCompetency, selectedCompetency, areAllNumbers, areAllStrings);
                 break;
 
             case SUMMARY_METHODS.type:
-                outputText = determineType(competencyValues, selectedCompetency);
+                outputText = determineType(selectedCompetency, areAllNumbers, areAllStrings);
                 break;
             default:
                 outputText = 'Invalid data';
@@ -137,11 +137,13 @@ function LookupForm() {
     }
 
     // Check if the form is valid
+    const competencyOptions = useMemo(() => extractCompetencies(lookupData), [lookupData]);
+    const participantOptions = useMemo(() => getParticipantNames(lookupData), [lookupData]);
     const isFormValid = selectedCompetency && (selectionMode === 'summary' ? selectedSummaryType : selectedParticipant);
 
     return (
         <section className={styles.lookupContainer}>
-             {error && <Popup message={error} onClose={() => setError(null)} />}
+            {error && <Popup message={error} onClose={() => setError(null)} />}
             <header className={styles.header}>
                 <h3>Look Up App</h3>
             </header>
@@ -174,10 +176,10 @@ function LookupForm() {
                         <SelectInput
                             label="Competency"
                             name="competency"
-                            options={extractCompetencies(lookupData)}
+                            options={competencyOptions}
                             value={selectedCompetency}
                             onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                setState({ ...state, selectedCompetency: e.target.value})
+                                setState({ ...state, selectedCompetency: e.target.value })
                             }
                             required
                         />
@@ -185,7 +187,7 @@ function LookupForm() {
                             <SelectInput
                                 label="Participant"
                                 name="participantid"
-                                options={getParticipantNames(lookupData)}
+                                options={participantOptions}
                                 value={selectedParticipant}
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
                                     setState({ ...state, selectedParticipant: e.target.value })
@@ -199,7 +201,7 @@ function LookupForm() {
                                 options={Object.values(SUMMARY_METHODS)}
                                 value={selectedSummaryType}
                                 onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                                    setState({ ...state, selectedSummaryType: e.target.value})
+                                    setState({ ...state, selectedSummaryType: e.target.value })
                                 }
                                 required
                             />
