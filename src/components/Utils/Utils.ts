@@ -1,16 +1,15 @@
-import { letterToScore, ParticipantData } from "../../types";
+import { CompetencyValues, letterToScore, ParticipantData } from "../../types";
 
-
-// Extract competencies from the data
+// This function takes an array of participant data and returns a unique list of competencies
 export const extractCompetencies = (competencies: ParticipantData[]) =>
     [...new Set(competencies.flatMap((participant) => Object.keys(participant).filter((key) => key !== 'Participant')))];
 
-// Get the names of the participants
+// Get the names of the participants to populate the participant dropdown
 export const getParticipantNames = (participants: ParticipantData[]) =>
     participants.map((participant) => participant.Participant);
 
-// If the competency is both string and number then convert them to numbers
-export const sanitisedCompetencyValues = (competencyValues: (string | number | null)[]) =>
+// This function takes an array of competency values and returns a new array with the string values converted to numbers
+export const sanitisedCompetencyValues = (competencyValues: CompetencyValues) =>
     competencyValues
         .map((competency) => {
             if (typeof competency === 'number') return competency;
@@ -21,17 +20,9 @@ export const sanitisedCompetencyValues = (competencyValues: (string | number | n
         })
         .filter((val): val is number => typeof val === 'number');
 
-// Get total value of the competencies that has both score and level        
-export const getTotal = (values: (string[] | number[])): number =>
+// Get total value of the competencies that has both score and level and this value is used to calculate average   
+export const getTotalScoredCompetencyValue = (values: (string[] | number[])): number =>
     values.filter((val): val is number => typeof val === 'number').reduce((acc, val) => acc + val, 0);
-
-const getValueType = (values: any[]) => {
-    const allNumbers = values.every(val => typeof val === 'number');
-    const allStrings = values.every(val => typeof val === 'string');
-    if (allNumbers) return 'number';
-    if (allStrings) return 'string';
-    return 'mixed';
-};
 
 export const calculateLowest = (sanitisedCompetency: any[], selectedCompetency: string, areAllNumbers: boolean, areAllStrings: boolean): string => {
 
@@ -94,7 +85,7 @@ export const calculateAverage = (sanitisedCompetency: any[], selectedCompetency:
         return `The average score for ${selectedCompetency} is ${averageLetter}`;
     } else {
         if (sanitisedCompetency.length > 0) {
-            const total = getTotal(sanitisedCompetency);
+            const total = getTotalScoredCompetencyValue(sanitisedCompetency);
             const average = Math.round((total / sanitisedCompetency.length) * 10) / 10;
             return `The average score for ${selectedCompetency} is ${average}`;
         } else {

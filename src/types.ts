@@ -1,5 +1,7 @@
 export type selectionType = 'participant' | 'summary';
 
+export type CompetencyValues = (string | number)[];
+
 export const modeSelection: { PARTICIPANT: selectionType; SUMMARY: selectionType } = {
     PARTICIPANT: 'participant',
     SUMMARY: 'summary',
